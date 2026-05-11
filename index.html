@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -9,13 +8,12 @@
   <style>
     *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
     :root {
-      --navy: #060D1A;
       --blue: #2563EB;
       --blue-light: #3B82F6;
       --white: #FFFFFF;
       --dim: rgba(255,255,255,0.52);
     }
-    html, body { height: 100%; background: var(--navy); color: var(--white); font-family: "Exo 2", sans-serif; overflow: hidden; }
+    html, body { height: 100%; background: #000000; color: var(--white); font-family: "Exo 2", sans-serif; overflow: hidden; }
     canvas#bg { position: fixed; inset: 0; z-index: 0; pointer-events: none; }
 
     .navbar {
@@ -53,8 +51,8 @@
     }
 
     .divider {
-      width: 100px; height: 2px;
-      background: linear-gradient(90deg, transparent, var(--blue), transparent);
+      width: 64px; height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.55), transparent);
       margin: 0 auto 2.6rem; animation: fade-up 1s 0.4s ease both;
     }
 
@@ -63,26 +61,36 @@
       font-size: clamp(0.95rem, 2.5vw, 1.3rem); font-weight: 300;
       letter-spacing: 0.18em; color: var(--dim);
       animation: fade-up 1s 0.55s ease both;
-      display: flex; align-items: center; justify-content: center; gap: 1px;
+      display: inline-flex; align-items: baseline;
+      justify-content: center; gap: 0;
     }
     .dots span {
       display: inline-block; opacity: 0;
-      animation: dot-fade 1.8s ease-in-out infinite;
-      color: var(--blue-light); font-size: 1.5em; line-height: 0.5; vertical-align: middle;
+      font-size: 0.9em; letter-spacing: 0;
+      color: var(--white); line-height: 1;
+      animation: dotSeq 2.4s ease-in-out infinite;
     }
     .dots span:nth-child(1) { animation-delay: 0s; }
-    .dots span:nth-child(2) { animation-delay: 0.35s; }
-    .dots span:nth-child(3) { animation-delay: 0.7s; }
-    @keyframes dot-fade { 0%,100%{opacity:0} 40%,60%{opacity:1} }
+    .dots span:nth-child(2) { animation-delay: 0.3s; }
+    .dots span:nth-child(3) { animation-delay: 0.6s; }
+    @keyframes dotSeq {
+      0%   { opacity: 0; }
+      10%  { opacity: 1; }
+      65%  { opacity: 1; }
+      80%  { opacity: 0; }
+      100% { opacity: 0; }
+    }
 
     .bottom-label {
-      position: fixed; bottom: 26px; left: 50%; transform: translateX(-50%);
-      font-family: "Orbitron", sans-serif; font-size: 0.58rem;
-      letter-spacing: 0.32em; color: rgba(255,255,255,0.15);
-      z-index: 10; text-transform: uppercase; white-space: nowrap;
+      position: fixed; bottom: 24px; left: 28px;
+      font-family: "Orbitron", sans-serif;
+      font-size: 0.48rem; font-weight: 400;
+      letter-spacing: 0.32em; text-transform: uppercase;
+      color: rgba(255,255,255,0.15); z-index: 10;
     }
-    @keyframes fade-up { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:translateY(0)} }
-    @keyframes fade-down { from{opacity:0;transform:translateY(-16px)} to{opacity:1;transform:translateY(0)} }
+
+    @keyframes fade-up { from { opacity: 0; transform: translateY(22px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes fade-down { from { opacity: 0; transform: translateY(-16px); } to { opacity: 1; transform: translateY(0); } }
   </style>
 </head>
 <body>
@@ -102,58 +110,66 @@
     </div>
   </div>
 
-  <div class="bottom-label">cristalabs.com &nbsp;·&nbsp; Est. 2026</div>
+  <div class="bottom-label">Est. 2026</div>
 
   <script>
     const canvas = document.getElementById("bg");
     const ctx = canvas.getContext("2d");
     let stars = [];
 
-    function resize() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
+    function resize() {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    }
 
     function initStars() {
       stars = [];
-      for (let i = 0; i < 200; i++) {
+      for (let i = 0; i < 220; i++) {
         stars.push({
-          x: Math.random() * canvas.width, y: Math.random() * canvas.height,
-          r: Math.random() * 1.3 + 0.15,
-          phase: Math.random() * Math.PI * 2, speed: Math.random() * 0.003 + 0.0008
+          x: Math.random() * canvas.width,
+          y: Math.random() * canvas.height,
+          // random timer — when to appear and disappear (ms)
+          nextToggle: Math.random() * 4000,
+          visible: Math.random() > 0.5,
+          // fade progress 0→1 or 1→0
+          alpha: Math.random(),
+          // how fast this star fades in/out
+          fadeSpeed: Math.random() * 0.008 + 0.002,
         });
       }
     }
 
-    const blobs = [
-      { x:0.5,  y:0.5,  r:0.55, color:"37,99,235",  a:0.14 },
-      { x:0.2,  y:0.25, r:0.38, color:"15,40,110",  a:0.28 },
-      { x:0.8,  y:0.72, r:0.40, color:"20,55,150",  a:0.22 },
-      { x:0.5,  y:0.0,  r:0.45, color:"6,13,26",    a:0.6  },
-      { x:0.5,  y:1.0,  r:0.45, color:"6,13,26",    a:0.6  },
-      { x:0.0,  y:0.5,  r:0.35, color:"6,13,26",    a:0.5  },
-      { x:1.0,  y:0.5,  r:0.35, color:"6,13,26",    a:0.5  },
-      { x:0.38, y:0.58, r:0.22, color:"59,130,246", a:0.07 },
-      { x:0.63, y:0.40, r:0.20, color:"59,130,246", a:0.06 },
-    ];
+    function draw() {
+      ctx.fillStyle = "#000000";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    function drawBackground() {
-      const w = canvas.width, h = canvas.height;
-      ctx.fillStyle = "#060D1A"; ctx.fillRect(0,0,w,h);
-      blobs.forEach(b => {
-        const rad = b.r * Math.max(w,h);
-        const grd = ctx.createRadialGradient(b.x*w,b.y*h,0,b.x*w,b.y*h,rad);
-        grd.addColorStop(0,   `rgba(${b.color},${b.a})`);
-        grd.addColorStop(0.5, `rgba(${b.color},${(b.a*0.35).toFixed(3)})`);
-        grd.addColorStop(1,   `rgba(${b.color},0)`);
-        ctx.fillStyle = grd; ctx.fillRect(0,0,w,h);
-      });
-    }
-
-    function draw(t) {
-      drawBackground();
       stars.forEach(s => {
-        const alpha = 0.2 + 0.7 * Math.abs(Math.sin(t * s.speed + s.phase));
-        ctx.beginPath(); ctx.arc(s.x,s.y,s.r,0,Math.PI*2);
-        ctx.fillStyle = `rgba(255,255,255,${alpha.toFixed(2)})`; ctx.fill();
+        // fade in or out based on visible state
+        if (s.visible) {
+          s.alpha = Math.min(1, s.alpha + s.fadeSpeed);
+        } else {
+          s.alpha = Math.max(0, s.alpha - s.fadeSpeed);
+        }
+        // once fully faded in or out, schedule next toggle
+        if (s.alpha >= 1 && s.visible) {
+          s.visible = false;
+        } else if (s.alpha <= 0 && !s.visible) {
+          // reposition randomly before reappearing
+          s.x = Math.random() * canvas.width;
+          s.y = Math.random() * canvas.height;
+          s.fadeSpeed = Math.random() * 0.008 + 0.002;
+          // random delay before appearing again
+          setTimeout(() => { s.visible = true; }, Math.random() * 3000 + 500);
+        }
+
+        if (s.alpha > 0) {
+          ctx.beginPath();
+          ctx.arc(s.x, s.y, 0.85, 0, Math.PI * 2);
+          ctx.fillStyle = `rgba(200,218,255,${s.alpha.toFixed(2)})`;
+          ctx.fill();
+        }
       });
+
       requestAnimationFrame(draw);
     }
 
