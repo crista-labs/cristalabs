@@ -124,15 +124,24 @@ function initAuth() {
 
     /* Auth Modal */
     #clAuthModal {
-      position: fixed; inset: 0; z-index: 9999;
-      display: none; align-items: center; justify-content: center;
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      z-index: 9999;
+      display: none;
+      align-items: center;
+      justify-content: center;
       padding: 24px;
     }
-    #clAuthModal.open { display: flex; }
+    #clAuthModal.open {
+      display: flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+    }
     .cl-auth-overlay {
-      position: absolute; inset: 0;
-      background: rgba(0,0,0,0.85);
-      backdrop-filter: blur(6px);
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.75);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
     }
     .cl-auth-box {
       position: relative; z-index: 1;
@@ -140,8 +149,11 @@ function initAuth() {
       border: 1px solid rgba(255,255,255,0.1);
       border-radius: 18px; padding: 36px 32px;
       width: 100%; max-width: 420px;
+      max-height: 90vh;
+      overflow-y: auto;
       box-shadow: 0 24px 80px rgba(0,0,0,0.8);
       animation: clAuthIn .3s ease;
+      margin: auto;
     }
     @keyframes clAuthIn {
       from { opacity:0; transform:scale(.95) translateY(10px); }
