@@ -4,6 +4,8 @@
     { "source": "/about", "destination": "/about.html" },
     { "source": "/contact", "destination": "/contact.html" },
     { "source": "/privacypolicy", "destination": "/privacypolicy.html" },
-    { "source": "/terms", "destination": "/terms.html" }
+    { "source": "/terms", "destination": "/terms.html" },
+    { "source": "/tools/chameleonai", "destination": "/tools/chameleonai/index.html" },
+    { "source": "/tools/chameleonai/privacypolicy", "destination": "/tools/chameleonai/privacypolicy/index.html" }
   ]
 }
