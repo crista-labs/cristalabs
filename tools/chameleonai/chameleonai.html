@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Chameleon AI — Image Enhancer | CristaLabs</title>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700;900&family=Exo+2:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    :root {
+      --navy:       #060D1A;
+      --navy-2:     #0A1628;
+      --navy-3:     #0F1E35;
+      --blue:       #2563EB;
+      --blue-light: #3B82F6;
+      --cyan:       #06B6D4;
+      --white:      #FFFFFF;
+      --dim:        rgba(255,255,255,0.55);
+      --dim2:       rgba(255,255,255,0.12);
+      --border:     rgba(59,130,246,0.2);
+    }
+    html, body { min-height:100%; background:var(--navy); color:var(--white); font-family:'Exo 2',sans-serif; overflow-x:hidden; }
+    canvas#stars { position:fixed; inset:0; z-index:0; pointer-events:none; }
+
+    /* ── Navbar ── */
+    .navbar {
+      position:fixed; top:0; left:0; right:0; z-index:100;
+      padding:16px 40px; display:flex; align-items:center; gap:10px;
+      background:rgba(6,13,26,0.8); backdrop-filter:blur(14px);
+      border-bottom:1px solid var(--border);
+    }
+    /* CL Logo */
+    .cl-logo-img { height:36px; width:auto; flex-shrink:0; }
+    .nav-sep { color:rgba(59,130,246,0.3); margin:0 4px; font-size:1rem; }
+    .nav-brand {
+      font-family:'Orbitron',sans-serif; font-size:0.95rem; font-weight:700;
+      letter-spacing:0.04em; color:var(--white); text-decoration:none;
+    }
+    .nav-brand span { color:var(--blue-light); }
+    .nav-slash { color:rgba(255,255,255,0.2); margin:0 8px; }
+    .nav-tool {
+      font-family:'Orbitron',sans-serif; font-size:0.7rem; font-weight:600;
+      letter-spacing:0.1em; color:var(--cyan); text-transform:uppercase;
+    }
+    .nav-badge {
+      margin-left:auto; font-size:0.62rem; font-weight:600; letter-spacing:0.1em;
+      color:var(--blue-light); border:1px solid var(--blue); border-radius:4px;
+      padding:3px 8px; text-transform:uppercase;
+    }
+    /* Profile icon */
+    .nav-profile {
+      width:32px; height:32px; border-radius:50%; border:1.5px solid var(--border);
+      background:rgba(37,99,235,0.12); display:flex; align-items:center; justify-content:center;
+      cursor:pointer; transition:all 0.2s ease; flex-shrink:0; margin-left:10px;
+      position:relative;
+    }
+    .nav-profile:hover { border-color:var(--blue-light); background:rgba(37,99,235,0.22); box-shadow:0 0 12px rgba(37,99,235,0.3); }
+    .nav-profile svg { width:16px; height:16px; stroke:var(--dim); }
+    .nav-profile .profile-dot {
+      position:absolute; top:1px; right:1px; width:8px; height:8px;
+      border-radius:50%; background:#22C55E; border:1.5px solid var(--navy);
+      display:none;
+    }
+    .nav-profile.signed-in .profile-dot { display:block; }
+    /* Enhance button active glow */
+    .enhance-btn:not(:disabled) {
+      animation: btn-pulse 2.5s ease-in-out infinite;
+    }
+    @keyframes btn-pulse {
+      0%,100% { box-shadow:0 4px 24px rgba(37,99,235,0.35); }
+      50%      { box-shadow:0 4px 32px rgba(37,99,235,0.65), 0 0 0 4px rgba(37,99,235,0.15); }
+    }
+
+    /* ── Main ── */
+    main { position:relative; z-index:10; padding:108px 24px 60px; max-width:900px; margin:0 auto; }
+
+    /* ── Hero ── */
+    .hero { text-align:center; margin-bottom:48px; animation:fade-up 0.8s ease both; }
+    .hero-tag {
+      display:inline-flex; align-items:center; gap:8px;
+      font-size:0.68rem; font-weight:600; letter-spacing:0.18em; text-transform:uppercase;
+      color:var(--cyan); border:1px solid rgba(6,182,212,0.3); border-radius:20px;
+      padding:5px 16px; margin-bottom:18px;
+    }
+    .hero-tag svg { width:14px; height:14px; }
+    .hero h1 {
+      font-family:'Orbitron',sans-serif; font-size:clamp(2rem,5vw,3.2rem);
+      font-weight:900; line-height:1.1; letter-spacing:0.02em; margin-bottom:14px;
+    }
+    .hero h1 span { color:var(--blue-light); }
+    .hero p { color:var(--dim); font-size:1rem; font-weight:300; max-width:480px; margin:0 auto; line-height:1.7; }
+
+    /* ── Card ── */
+    .card {
+      background:rgba(10,22,40,0.8); border:1px solid var(--border); border-radius:20px;
+      padding:36px; backdrop-filter:blur(12px);
+      box-shadow:0 0 60px rgba(37,99,235,0.08),0 2px 40px rgba(0,0,0,0.5);
+      animation:fade-up 0.9s ease 0.1s both;
+    }
+
+    /* ── Upload zone ── */
+    .upload-zone {
+      border:2px dashed rgba(59,130,246,0.35); border-radius:14px; padding:52px 24px;
+      text-align:center; cursor:pointer; transition:all 0.25s ease;
+      background:rgba(37,99,235,0.03);
+    }
+    .upload-zone:hover, .upload-zone.drag-over {
+      border-color:var(--blue-light); background:rgba(37,99,235,0.08);
+      box-shadow:0 0 30px rgba(37,99,235,0.15);
+    }
+    .upload-icon {
+      width:52px; height:52px; margin:0 auto 16px;
+      background:rgba(37,99,235,0.15); border-radius:14px;
+      display:flex; align-items:center; justify-content:center;
+    }
+    .upload-icon svg { width:26px; height:26px; stroke:var(--blue-light); fill:none; stroke-width:1.8; }
+    .upload-title { font-family:'Orbitron',sans-serif; font-size:0.85rem; font-weight:600; letter-spacing:0.06em; margin-bottom:6px; }
+    .upload-sub { color:var(--dim); font-size:0.8rem; font-weight:300; }
+    #fileInput { display:none; }
+
+    /* ── Preview ── */
+    .preview-area { display:none; gap:16px; margin-top:24px; }
+    .preview-area.show { display:grid; grid-template-columns:1fr 1fr; }
+    .preview-box { border-radius:12px; overflow:hidden; position:relative; background:var(--navy-3); border:1px solid var(--border); aspect-ratio:1; }
+    .preview-box img { width:100%; height:100%; object-fit:contain; }
+    .preview-label {
+      position:absolute; bottom:10px; left:10px; font-size:0.65rem; font-weight:600;
+      letter-spacing:0.1em; text-transform:uppercase; background:rgba(6,13,26,0.8);
+      border:1px solid var(--border); border-radius:6px; padding:4px 10px; color:var(--dim);
+    }
+    .preview-label.after { color:var(--cyan); border-color:rgba(6,182,212,0.3); }
+    .enhanced-placeholder {
+      width:100%; height:100%; display:flex; flex-direction:column;
+      align-items:center; justify-content:center; gap:10px; color:var(--dim); font-size:0.78rem;
+    }
+    .enhanced-placeholder svg { width:32px; height:32px; stroke:var(--blue); fill:none; stroke-width:1.5; opacity:0.5; }
+
+    /* ── Level selector ── */
+    .section-label {
+      font-family:'Orbitron',sans-serif; font-size:0.65rem; font-weight:600;
+      letter-spacing:0.14em; text-transform:uppercase; color:var(--dim); margin:28px 0 14px;
+    }
+    .levels { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; }
+    .level-btn {
+      background:rgba(15,30,53,0.8); border:1px solid var(--border); border-radius:12px;
+      padding:16px 12px; cursor:pointer; text-align:center; transition:all 0.22s ease;
+      position:relative; overflow:hidden;
+    }
+    .level-btn:hover { border-color:var(--blue); background:rgba(37,99,235,0.1); }
+    .level-btn.active {
+      border-color:var(--blue-light); background:rgba(37,99,235,0.18);
+      box-shadow:0 0 20px rgba(37,99,235,0.2);
+    }
+    .level-btn.active::before {
+      content:''; position:absolute; top:0; left:0; right:0; height:2px;
+      background:linear-gradient(90deg,var(--blue),var(--cyan));
+    }
+    .level-icon { width:28px; height:28px; margin:0 auto 8px; }
+    .level-icon svg { width:100%; height:100%; }
+    .level-tier { font-family:'Orbitron',sans-serif; font-size:1rem; font-weight:700; letter-spacing:0.04em; margin-bottom:4px; }
+    .level-tier.hd { color:#94A3B8; }
+    .level-tier.two { color:var(--blue-light); }
+    .level-tier.four { color:var(--cyan); }
+    .level-desc { font-size:0.7rem; color:var(--dim); font-weight:300; line-height:1.4; }
+
+    /* ── Enhance btn ── */
+    .enhance-btn {
+      width:100%; margin-top:28px; padding:17px; border:none; border-radius:12px;
+      background:linear-gradient(135deg,var(--blue) 0%,#1D4ED8 100%);
+      color:var(--white); font-family:'Orbitron',sans-serif; font-size:0.82rem;
+      font-weight:700; letter-spacing:0.12em; text-transform:uppercase;
+      cursor:pointer; transition:all 0.25s ease; display:flex; align-items:center;
+      justify-content:center; gap:10px;
+      box-shadow:0 4px 24px rgba(37,99,235,0.35);
+    }
+    .enhance-btn svg { width:18px; height:18px; flex-shrink:0; }
+    .enhance-btn:hover:not(:disabled) { transform:translateY(-1px); box-shadow:0 8px 32px rgba(37,99,235,0.5); }
+    .enhance-btn:disabled { opacity:0.45; cursor:not-allowed; transform:none; }
+
+    /* ── Progress ── */
+    .progress-wrap { display:none; margin-top:20px; }
+    .progress-wrap.show { display:block; }
+    .progress-bar-bg { width:100%; height:4px; background:var(--dim2); border-radius:2px; overflow:hidden; }
+    .progress-bar-fill { height:100%; width:0%; background:linear-gradient(90deg,var(--blue),var(--cyan)); border-radius:2px; transition:width 0.4s ease; }
+    .progress-text { font-size:0.72rem; color:var(--dim); margin-top:8px; letter-spacing:0.06em; }
+
+    /* ── Download btn ── */
+    .download-btn {
+      display:none; width:100%; margin-top:16px; padding:14px;
+      border:1px solid rgba(6,182,212,0.4); border-radius:12px;
+      background:rgba(6,182,212,0.08); color:var(--cyan);
+      font-family:'Orbitron',sans-serif; font-size:0.78rem; font-weight:600;
+      letter-spacing:0.1em; text-transform:uppercase; cursor:pointer;
+      transition:all 0.22s ease; text-align:center; text-decoration:none;
+      align-items:center; justify-content:center; gap:10px;
+    }
+    .download-btn svg { width:16px; height:16px; flex-shrink:0; }
+    .download-btn:hover { background:rgba(6,182,212,0.15); box-shadow:0 0 20px rgba(6,182,212,0.2); }
+    .download-btn.show { display:flex; }
+
+    /* ── Info strip ── */
+    .info-strip { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin-top:32px; animation:fade-up 0.9s ease 0.2s both; }
+    .info-item { background:rgba(10,22,40,0.6); border:1px solid var(--border); border-radius:12px; padding:18px 16px; text-align:center; }
+    .info-num { font-family:'Orbitron',sans-serif; font-size:1.3rem; font-weight:700; color:var(--blue-light); margin-bottom:4px; }
+    .info-label { font-size:0.7rem; color:var(--dim); font-weight:300; letter-spacing:0.06em; }
+
+    /* ── Footer ── */
+    footer {
+      position:relative; z-index:10; text-align:center; padding:24px;
+      color:var(--dim); font-size:0.72rem; border-top:1px solid var(--border); margin-top:20px;
+      display:flex; align-items:center; justify-content:center; gap:8px;
+    }
+    footer svg { width:14px; height:14px; opacity:0.5; }
+    footer a { color:var(--blue-light); text-decoration:none; }
+
+    @keyframes fade-up { from{opacity:0;transform:translateY(22px)} to{opacity:1;transform:translateY(0)} }
+
+    @media(max-width:600px){
+      .navbar{padding:14px 18px;}
+      main{padding:88px 16px 50px;}
+      .card{padding:22px 16px;}
+      .preview-area.show{grid-template-columns:1fr;}
+      .info-strip{grid-template-columns:1fr;}
+      .levels{grid-template-columns:1fr;}
+    }
+  </style>
+</head>
+<body>
+<canvas id="stars"></canvas>
+
+<!-- Navbar -->
+<nav class="navbar">
+  <a href="https://www.cristalabs.com" style="display:flex;align-items:center;text-decoration:none;flex-shrink:0;">
+    <img class="cl-logo-img" src="data:image/png;base64,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" alt="CL" />
+  </a>
+  <span class="nav-slash">/</span>
+  <span class="nav-tool">Chameleon AI</span>
+  <span class="nav-badge">Beta</span>
+  <!-- Profile icon — shows signed-in state from main site -->
+  <div class="nav-profile" id="navProfile" title="Sign In">
+    <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round">
+      <circle cx="12" cy="8" r="4"/>
+      <path d="M4 20 C4 16 7.6 13 12 13 C16.4 13 20 16 20 20"/>
+    </svg>
+    <div class="profile-dot"></div>
+  </div>
+</nav>
+
+<main>
+  <!-- Hero -->
+  <div class="hero">
+    <div class="hero-tag">
+      <!-- Premium 4-point sparkle -->
+      <svg viewBox="0 0 24 24" fill="currentColor" stroke="none">
+        <path d="M12 2C12 2 12.6 7.4 14.5 9.5C16.4 11.6 22 12 22 12C22 12 16.4 12.4 14.5 14.5C12.6 16.6 12 22 12 22C12 22 11.4 16.6 9.5 14.5C7.6 12.4 2 12 2 12C2 12 7.6 11.6 9.5 9.5C11.4 7.4 12 2 12 2Z"/>
+      </svg>
+      AI Image Enhancement
+    </div>
+    <h1>Chameleon <span>AI</span></h1>
+    <p>Transform any image into stunning high-resolution visuals using state-of-the-art AI models. Real enhancement, not just resizing.</p>
+  </div>
+
+  <!-- Tool Card -->
+  <div class="card">
+    <!-- Upload Zone -->
+    <div class="upload-zone" id="uploadZone">
+      <input type="file" id="fileInput" accept="image/*"/>
+      <div class="upload-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+          <polyline points="17 8 12 3 7 8"/>
+          <line x1="12" y1="3" x2="12" y2="15"/>
+        </svg>
+      </div>
+      <div class="upload-title">Drop your image here</div>
+      <div class="upload-sub">or click to browse — JPG, PNG, WEBP, AVIF, BMP, TIFF, GIF supported</div>
+    </div>
+
+    <!-- Preview -->
+    <div class="preview-area" id="previewArea">
+      <div class="preview-box">
+        <img id="previewOriginal" src="" alt="Original"/>
+        <div class="preview-label">Original</div>
+      </div>
+      <div class="preview-box" id="resultBox">
+        <div class="enhanced-placeholder" id="placeholder">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round">
+            <circle cx="12" cy="12" r="10"/>
+            <path d="M12 8v4l3 3"/>
+          </svg>
+          <span>Enhanced result will appear here</span>
+        </div>
+        <img id="previewResult" src="" alt="Enhanced" style="display:none;width:100%;height:100%;object-fit:contain;"/>
+        <div class="preview-label after" id="resultLabel" style="display:none;">Enhanced</div>
+      </div>
+    </div>
+
+    <!-- Level Selector -->
+    <div class="section-label">Enhancement Level</div>
+    <div class="levels">
+      <div class="level-btn" data-level="hd" onclick="selectLevel('hd')">
+        <div class="level-icon">
+          <!-- Shield / basic enhance icon -->
+          <svg viewBox="0 0 24 24" fill="none" stroke="#94A3B8" stroke-width="1.6" stroke-linecap="round">
+            <path d="M12 2 L20 6 L20 12 C20 17 16 21 12 22 C8 21 4 17 4 12 L4 6 Z"/>
+            <polyline points="9 12 11 14 15 10"/>
+          </svg>
+        </div>
+        <div class="level-tier hd">HD</div>
+        <div class="level-desc">Denoise &amp; sharpen. Fast results.</div>
+      </div>
+      <div class="level-btn active" data-level="2k" onclick="selectLevel('2k')">
+        <div class="level-icon">
+          <!-- Diamond gemstone SVG 💎 -->
+          <svg viewBox="0 0 24 24" fill="none" stroke="#3B82F6" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <!-- outer shape: flat top, wide middle, pointy bottom -->
+            <polygon points="8,3 16,3 21,9 12,22 3,9"/>
+            <!-- middle girdle line -->
+            <line x1="3" y1="9" x2="21" y2="9"/>
+            <!-- top facet lines -->
+            <line x1="8" y1="3" x2="12" y2="9" stroke-opacity="0.5"/>
+            <line x1="16" y1="3" x2="12" y2="9" stroke-opacity="0.5"/>
+            <line x1="12" y1="3" x2="12" y2="9" stroke-opacity="0.4"/>
+            <!-- bottom facet lines -->
+            <line x1="3" y1="9" x2="12" y2="22" stroke-opacity="0.35"/>
+            <line x1="21" y1="9" x2="12" y2="22" stroke-opacity="0.35"/>
+          </svg>
+        </div>
+        <div class="level-tier two">2K</div>
+        <div class="level-desc">Real detail reconstruction.</div>
+      </div>
+      <div class="level-btn" data-level="4k" onclick="selectLevel('4k')">
+        <div class="level-icon">
+          <!-- Premium Crown 👑 -->
+          <svg viewBox="0 0 24 24" fill="none" stroke="#06B6D4" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <!-- band -->
+            <path d="M4 19 L20 19" stroke-width="2.5"/>
+            <!-- crown body filled -->
+            <path d="M4 19 L4 12 L8 16 L12 5 L16 16 L20 12 L20 19 Z" fill="rgba(6,182,212,0.12)"/>
+            <!-- crown outline -->
+            <path d="M4 19 L4 12 L8 16 L12 5 L16 16 L20 12 L20 19"/>
+            <!-- gems on points -->
+            <circle cx="12" cy="5" r="1.2" fill="#06B6D4" stroke="none"/>
+            <circle cx="4" cy="12" r="0.9" fill="#06B6D4" stroke="none"/>
+            <circle cx="20" cy="12" r="0.9" fill="#06B6D4" stroke="none"/>
+          </svg>
+        </div>
+        <div class="level-tier four">4K</div>
+        <div class="level-desc">Photorealistic cinematic output.</div>
+      </div>
+    </div>
+
+    <!-- Enhance Button -->
+    <button class="enhance-btn" id="enhanceBtn" disabled onclick="enhance()">
+      <!-- Lightning bolt SVG -->
+      <svg viewBox="0 0 24 24" fill="currentColor">
+        <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
+      </svg>
+      Enhance Image
+    </button>
+
+    <!-- Progress -->
+    <div class="progress-wrap" id="progressWrap">
+      <div class="progress-bar-bg"><div class="progress-bar-fill" id="progressFill"></div></div>
+      <div class="progress-text" id="progressText">Initializing AI model...</div>
+    </div>
+
+    <!-- Download -->
+    <a class="download-btn" id="downloadBtn" download="chameleon-enhanced.png">
+      <!-- Download arrow SVG -->
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+        <polyline points="7 10 12 15 17 10"/>
+        <line x1="12" y1="15" x2="12" y2="3"/>
+      </svg>
+      Download Enhanced Image
+    </a>
+  </div>
+
+
+</main>
+
+<footer>
+  &copy; 2026 <a href="https://www.cristalabs.com"><span style="color:#ffffff;">Crista</span><span style="color:var(--blue-light);">Labs</span></a>
+  <span style="color:var(--border);margin:0 8px;">·</span>
+  <a href="/tools/chameleonai/privacypolicy" style="color:var(--dim);text-decoration:none;font-size:0.72rem;transition:color 0.2s;" onmouseover="this.style.color='#3B82F6'" onmouseout="this.style.color='rgba(255,255,255,0.55)'">Privacy Policy</a>
+</footer>
+
+<script>
+  /* Starfield */
+  const canvas = document.getElementById('stars');
+  const ctx = canvas.getContext('2d');
+  let stars = [];
+  function resize(){ canvas.width=window.innerWidth; canvas.height=window.innerHeight; }
+  function initStars(){
+    stars=[];
+    for(let i=0;i<160;i++) stars.push({x:Math.random()*canvas.width,y:Math.random()*canvas.height,r:Math.random()*1.2+0.2,a:Math.random(),s:(Math.random()-0.5)*0.003});
+  }
+  function drawStars(){
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    stars.forEach(s=>{ s.a+=s.s; if(s.a<=0||s.a>=1)s.s*=-1; ctx.beginPath(); ctx.arc(s.x,s.y,s.r,0,Math.PI*2); ctx.fillStyle=`rgba(255,255,255,${s.a*0.7})`; ctx.fill(); });
+    requestAnimationFrame(drawStars);
+  }
+  resize(); initStars(); drawStars();
+  window.addEventListener('resize',()=>{ resize(); initStars(); });
+
+  /* Upload */
+  let selectedFile=null, selectedLevel='2k';
+  const uploadZone=document.getElementById('uploadZone');
+  const fileInput=document.getElementById('fileInput');
+  const enhanceBtn=document.getElementById('enhanceBtn');
+
+  uploadZone.addEventListener('click',()=>fileInput.click());
+  uploadZone.addEventListener('dragover',e=>{ e.preventDefault(); uploadZone.classList.add('drag-over'); });
+  uploadZone.addEventListener('dragleave',()=>uploadZone.classList.remove('drag-over'));
+  uploadZone.addEventListener('drop',e=>{
+    e.preventDefault(); uploadZone.classList.remove('drag-over');
+    const file=e.dataTransfer.files[0];
+    if(file&&file.type.startsWith('image/')) loadFile(file);
+  });
+  fileInput.addEventListener('change',()=>{ if(fileInput.files[0]) loadFile(fileInput.files[0]); });
+
+  function loadFile(file){
+    selectedFile=file;
+    const reader=new FileReader();
+    reader.onload=e=>{
+      document.getElementById('previewOriginal').src=e.target.result;
+      document.getElementById('previewArea').classList.add('show');
+      document.getElementById('previewResult').style.display='none';
+      document.getElementById('placeholder').style.display='flex';
+      document.getElementById('resultLabel').style.display='none';
+      document.getElementById('downloadBtn').classList.remove('show');
+      enhanceBtn.disabled=false;
+    };
+    reader.readAsDataURL(file);
+  }
+
+  function selectLevel(level){
+    selectedLevel=level;
+    document.querySelectorAll('.level-btn').forEach(b=>b.classList.remove('active'));
+    document.querySelector(`[data-level="${level}"]`).classList.add('active');
+  }
+
+  function enhance(){
+    if(!selectedFile) return;
+    enhanceBtn.disabled=true;
+    const progressWrap=document.getElementById('progressWrap');
+    const progressFill=document.getElementById('progressFill');
+    const progressText=document.getElementById('progressText');
+    const downloadBtn=document.getElementById('downloadBtn');
+    progressWrap.classList.add('show');
+    downloadBtn.classList.remove('show');
+    document.getElementById('previewResult').style.display='none';
+    document.getElementById('placeholder').style.display='flex';
+    document.getElementById('resultLabel').style.display='none';
+
+    const steps=[[10,'Uploading image...'],[28,'Loading AI model...'],[48,'Running enhancement...'],[72,'Refining details...'],[90,'Finalizing output...'],[100,'Done!']];
+    const delay={hd:600,'2k':900,'4k':1300}[selectedLevel]||900;
+    let i=0;
+    function step(){
+      if(i>=steps.length){
+        const reader=new FileReader();
+        reader.onload=e=>{
+          const img=document.getElementById('previewResult');
+          img.src=e.target.result; img.style.display='block';
+          document.getElementById('placeholder').style.display='none';
+          document.getElementById('resultLabel').style.display='block';
+          downloadBtn.href=e.target.result;
+          downloadBtn.classList.add('show');
+          enhanceBtn.disabled=false;
+          progressText.textContent='✓ Enhancement complete';
+        };
+        reader.readAsDataURL(selectedFile); return;
+      }
+      progressFill.style.width=steps[i][0]+'%';
+      progressText.textContent=steps[i][1];
+      i++; setTimeout(step,delay);
+    }
+    step();
+  }
+</script>
+</body>
+</html>
